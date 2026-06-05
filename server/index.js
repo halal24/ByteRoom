@@ -11,12 +11,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    origin: '*', // Allow any origin to fix Vercel/Render CORS mismatch
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   },
 });
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Routes
