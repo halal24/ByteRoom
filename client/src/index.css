@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-900: #0a0a0a;
+  --color-dark-800: #121212;
+  --color-dark-700: #18181c;
+  --color-accent-cyan: #00ffcc;
+  --color-accent-purple: #a78bfa;
+  --font-inter: "Inter", sans-serif;
+}
+
+@utility glass-panel {
+  background: rgba(18, 18, 18, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-white antialiased font-inter;
+  }
+}
