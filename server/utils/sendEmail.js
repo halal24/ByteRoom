@@ -20,6 +20,8 @@ const sendEmail = async ({ to, subject, text, html }) => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    // Force IPv4 to prevent ENETUNREACH errors on Render/cloud providers
+    family: 4,
   });
 
   const mailOptions = {
