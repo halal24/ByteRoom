@@ -98,12 +98,13 @@ router.post('/', protect, async (req, res) => {
       </div>
     `;
     
-    await sendEmail({
+    // Send email asynchronously in the background so it doesn't block the UI
+    sendEmail({
       to: candidateEmail,
       subject: emailSubject,
       text: emailText,
       html: emailHtml
-    });
+    }).catch(err => console.error('Background email sending error:', err));
 
     res.status(201).json(schedule);
   } catch (error) {
