@@ -31,6 +31,7 @@ const Schedule = () => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [duration, setDuration] = useState('60');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchSchedules = async () => {
     try {
@@ -49,6 +50,7 @@ const Schedule = () => {
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       // Combine date and time into ISO string
       const scheduledAt = new Date(`${date}T${time}`).toISOString();
@@ -73,6 +75,8 @@ const Schedule = () => {
     } catch (err) {
       console.error('Failed to schedule', err);
       alert('Failed to schedule interview');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -250,8 +254,10 @@ const Schedule = () => {
                      </select>
                   </div>
                   <div className="flex justify-end gap-4 pt-4 border-t border-white/10 mt-6 items-center">
-                     <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancel</button>
-                     <Button type="submit" icon>Schedule Session</Button>
+                     <button type="button" onClick={() => setShowModal(false)} disabled={isSubmitting} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50">Cancel</button>
+                     <Button type="submit" disabled={isSubmitting} icon={!isSubmitting}>
+                       {isSubmitting ? 'Scheduling...' : 'Schedule Session'}
+                     </Button>
                   </div>
                </form>
             </Card>
