@@ -47,10 +47,13 @@ const Dashboard = () => {
 
         data.forEach((item: any) => {
           const endTime = new Date(item.scheduledAt).getTime() + item.duration * 60000;
-          if (endTime > now) {
+          const isCompleted = item.status === 'completed' || item.status === 'cancelled' || endTime <= now;
+          
+          if (!isCompleted) {
             upcoming++;
             upcomingList.push(item);
-          } else {
+          } else if (item.status === 'completed' || (!item.status && endTime <= now)) {
+            // Count as completed if explicitly marked, or time passed (exclude explicitly cancelled from completed count)
             completed++;
           }
         });

@@ -80,6 +80,16 @@ const Schedule = () => {
     }
   };
 
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      await api.patch(`/schedule/${id}/status`, { status });
+      fetchSchedules(); // refresh the list
+    } catch (err) {
+      console.error('Failed to update status', err);
+      alert('Failed to update interview status');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dark-900 text-white flex">
       <Sidebar />
@@ -123,7 +133,13 @@ const Schedule = () => {
                 const now = new Date().getTime();
                 const filteredSchedules = schedules.filter(item => {
                   const endTime = new Date(item.scheduledAt).getTime() + item.duration * 60000;
-                  return activeTab === 'upcoming' ? endTime > now : endTime <= now;
+                  if (activeTab === 'upcoming') {
+                    // Show in upcoming if it's explicitly scheduled OR (no status and hasn't passed)
+                    return item.status === 'scheduled' || (!item.status && endTime > now);
+                  } else {
+                    // Show in completed if explicitly marked, or time has passed
+                    return item.status === 'completed' || item.status === 'cancelled' || endTime <= now;
+                  }
                 });
 
                 if (filteredSchedules.length === 0) {
@@ -173,14 +189,40 @@ const Schedule = () => {
                            <p>⏰ {timeStr} ({item.duration} min)</p>
                            <p>👥 {isCandidate ? 'Interviewer: ' + item.interviewer.name : 'Candidate: ' + item.candidateEmail}</p>
                            <p>🔗 Room: <span className="text-white">{item.roomId}</span></p>
+                           {item.status && item.status !== 'scheduled' && (
+                             <p className="mt-2">
+                               <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                                 item.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                               }`}>
+                                 {item.status.toUpperCase()}
+                               </span>
+                             </p>
+                           )}
                         </div>
                         
-                        <div className="mt-auto pt-4 border-t border-white/10 flex gap-2 w-full">
+                        <div className="mt-auto pt-4 border-t border-white/10 flex flex-col gap-2 w-full">
+                          {activeTab === 'upcoming' && !isCandidate && (!item.status || item.status === 'scheduled') && (
+                             <div className="flex gap-2 w-full mb-2">
+                               <button 
+                                  onClick={() => handleUpdateStatus(item._id, 'completed')}
+                                  className="flex-1 bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/30 text-xs py-1.5 rounded-lg transition-colors font-semibold"
+                               >
+                                  ✓ Mark Completed
+                               </button>
+                               <button 
+                                  onClick={() => handleUpdateStatus(item._id, 'cancelled')}
+                                  className="flex-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 text-xs py-1.5 rounded-lg transition-colors font-semibold"
+                               >
+                                  ✕ Cancel
+                               </button>
+                             </div>
+                          )}
                           <Button 
                              onClick={() => navigate(`/room/${item.roomId}`)}
                              className="w-full"
+                             disabled={item.status === 'cancelled' || item.status === 'completed'}
                           >
-                             Join Room
+                             {item.status === 'cancelled' ? 'Cancelled' : item.status === 'completed' ? 'Completed' : 'Join Room'}
                           </Button>
                         </div>
                      </Card>

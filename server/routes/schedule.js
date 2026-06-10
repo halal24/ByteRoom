@@ -133,4 +133,27 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// Update schedule status
+router.patch('/:id/status', protect, async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    // Only the interviewer who created the schedule should be able to update its status
+    const schedule = await Schedule.findOneAndUpdate(
+      { _id: req.params.id, interviewer: req.user._id },
+      { status },
+      { new: true }
+    );
+    
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found or unauthorized' });
+    }
+    
+    res.json(schedule);
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({ message: 'Server error updating status' });
+  }
+});
+
 module.exports = router;
