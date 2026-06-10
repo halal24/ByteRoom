@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
-const SOCKET_URL = 'http://localhost:5005';
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5005';
 
 const Whiteboard = ({ roomId }: { roomId: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -13,7 +13,7 @@ interface EditorProps {
   roomId: string;
 }
 
-const SOCKET_URL = 'http://localhost:5005';
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5005';
 
 const getExtension = (lang: string) => {
   if (lang === 'python') return python();
