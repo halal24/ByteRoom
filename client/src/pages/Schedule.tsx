@@ -14,7 +14,7 @@ interface ScheduleItem {
   duration: number;
   roomId: string;
   status: string;
-  interviewer: { name: string; email: string };
+  interviewer: { _id: string; name: string; email: string };
 }
 
 const Schedule = () => {
@@ -134,10 +134,8 @@ const Schedule = () => {
                 const filteredSchedules = schedules.filter(item => {
                   const endTime = new Date(item.scheduledAt).getTime() + item.duration * 60000;
                   if (activeTab === 'upcoming') {
-                    // Show in upcoming if it's explicitly scheduled OR (no status and hasn't passed)
-                    return item.status === 'scheduled' || (!item.status && endTime > now);
+                    return item.status !== 'completed' && item.status !== 'cancelled' && endTime > now;
                   } else {
-                    // Show in completed if explicitly marked, or time has passed
                     return item.status === 'completed' || item.status === 'cancelled' || endTime <= now;
                   }
                 });
@@ -172,6 +170,7 @@ const Schedule = () => {
                  const mins = date.getMinutes().toString().padStart(2, '0');
                  const timeStr = `${hours}:${mins} ${ampm}`;
                  
+                 const isInterviewer = user?._id === item.interviewer._id;
                  const isCandidate = user?.email === item.candidateEmail;
                  
                  return (
@@ -201,7 +200,7 @@ const Schedule = () => {
                         </div>
                         
                         <div className="mt-auto pt-4 border-t border-white/10 flex flex-col gap-2 w-full">
-                          {activeTab === 'upcoming' && !isCandidate && (!item.status || item.status === 'scheduled') && (
+                          {activeTab === 'upcoming' && isInterviewer && (!item.status || item.status === 'scheduled') && (
                              <div className="flex gap-2 w-full mb-2">
                                <button 
                                   onClick={() => handleUpdateStatus(item._id, 'completed')}
