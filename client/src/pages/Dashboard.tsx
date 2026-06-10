@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -29,6 +29,8 @@ const Dashboard = () => {
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
+  const [nextInterview, setNextInterview] = useState<any>(null);
+  const [countdown, setCountdown] = useState('');
   const [recentRooms, setRecentRooms] = useState<any[]>([]);
   const [languageUsage, setLanguageUsage] = useState<Record<string, number>>({});
   const [loadingRooms, setLoadingRooms] = useState(true);
@@ -55,6 +57,9 @@ const Dashboard = () => {
 
         setUpcomingCount(upcoming);
         setCompletedCount(completed);
+        // Sort by soonest first, pick the very next one
+        upcomingList.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+        setNextInterview(upcomingList[0] || null);
         setUpcomingInterviews(upcomingList.slice(0, 3));
       } catch (err) {
         console.error('Failed to fetch schedules', err);
@@ -84,6 +89,24 @@ const Dashboard = () => {
     fetchSchedules();
     fetchRooms();
   }, []);
+
+  // Live countdown ticker
+  useEffect(() => {
+    if (!nextInterview) return;
+    const tick = () => {
+      const diff = new Date(nextInterview.scheduledAt).getTime() - Date.now();
+      if (diff <= 0) { setCountdown('Starting now!'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (d > 0) setCountdown(`${d}d ${h}h ${m}m`);
+      else setCountdown(`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [nextInterview]);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +174,45 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Countdown Banner — only shown when there's an upcoming interview */}
+        {nextInterview && (
+          <div className="mb-8 rounded-xl border border-accent-cyan/30 bg-accent-cyan/5 px-6 py-4 flex items-center justify-between gap-4 relative overflow-hidden">
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-accent-cyan/10 via-transparent to-accent-purple/10 pointer-events-none" />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-10 h-10 rounded-full bg-accent-cyan/20 border border-accent-cyan/40 flex items-center justify-center text-accent-cyan shrink-0 animate-pulse">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-accent-cyan font-mono uppercase tracking-widest mb-0.5">Next Interview</p>
+                <p className="text-white font-semibold">{nextInterview.title}</p>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  {new Date(nextInterview.scheduledAt).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {' · '}
+                  {new Date(nextInterview.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              {/* Live ticking countdown */}
+              <div className="text-right">
+                <p className="text-xs text-gray-500 font-mono mb-1">Starts in</p>
+                <p className="text-2xl font-bold font-mono tabular-nums text-accent-cyan tracking-wider">
+                  {countdown}
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(`/room/${nextInterview.roomId}`)}
+                className="shrink-0 px-4 py-2 bg-accent-cyan text-black text-sm font-bold rounded-lg hover:bg-accent-cyan/90 transition-colors"
+              >
+                Join Room →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

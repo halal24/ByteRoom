@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -50,10 +50,19 @@ const FullLogo = () => (
 const Sidebar = () => {
   const { logout } = useAuth();
   const location = useLocation();
-  const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sidebar is expanded only while hovered
-  const expanded = hovered;
+  const handleMouseEnter = () => {
+    // Cancel any pending collapse when re-entering
+    if (collapseTimer.current) clearTimeout(collapseTimer.current);
+    setExpanded(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Delay collapse so brief mouse-leave during clicks doesn't flicker
+    collapseTimer.current = setTimeout(() => setExpanded(false), 200);
+  };
 
   const navItems = [
     {
@@ -80,8 +89,8 @@ const Sidebar = () => {
     <div
       className="relative flex flex-col border-r border-white/10 bg-dark-800/50 transition-all duration-300 ease-in-out overflow-hidden"
       style={{ width: expanded ? '220px' : '68px' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Logo Area */}
       <div className="flex items-center justify-center h-20 px-2 overflow-hidden">
