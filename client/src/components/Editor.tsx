@@ -3,7 +3,8 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { cpp } from '@codemirror/lang-cpp';
-import { ViewUpdate } from '@codemirror/view';
+import { ViewUpdate, EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { remoteCursorsField, updateRemoteCursors, RemoteCursor } from './editor/remoteCursorExtension';
@@ -67,19 +68,36 @@ const Editor: React.FC<EditorProps> = ({ roomId }) => {
     // Receive the current code when joining
     socket.on('code-response', ({ code: existingCode, language: existingLang }) => {
       isRemoteChange.current = true;
-      setCode(existingCode || '');
+      // Update CodeMirror directly to avoid React re-render crash
+      if (viewRef.current) {
+        const view = viewRef.current;
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: existingCode || '' }
+        });
+      } else {
+        setCode(existingCode || '');
+      }
       setLanguage(existingLang || 'javascript');
-      // Reset after React has had a chance to re-render with the new value
-      setTimeout(() => { isRemoteChange.current = false; }, 0);
+      setTimeout(() => { isRemoteChange.current = false; }, 50);
     });
 
-    // When a remote user types, update our local editor
+    // When a remote user types, push directly into CodeMirror view to prevent black screen
     socket.on('code-change', ({ code: remoteCode, language: remoteLang }) => {
       isRemoteChange.current = true;
-      setCode(remoteCode);
+      if (viewRef.current) {
+        const view = viewRef.current;
+        const currentCode = view.state.doc.toString();
+        // Only dispatch if the content actually changed to avoid unnecessary operations
+        if (currentCode !== remoteCode) {
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: remoteCode }
+          });
+        }
+      } else {
+        setCode(remoteCode);
+      }
       if (remoteLang) setLanguage(remoteLang);
-      // Reset after React has had a chance to re-render with the new value
-      setTimeout(() => { isRemoteChange.current = false; }, 0);
+      setTimeout(() => { isRemoteChange.current = false; }, 50);
     });
 
     // When a remote cursor moves
