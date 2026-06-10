@@ -16,8 +16,21 @@ router.post('/', protect, async (req, res) => {
       title: title || 'Technical Interview',
       language: language || 'javascript'
     });
-
     res.status(201).json(room);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   GET /api/rooms
+// @desc    Get all rooms hosted by the logged-in user
+// @access  Private
+router.get('/', protect, async (req, res) => {
+  try {
+    const rooms = await Room.find({ host: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
